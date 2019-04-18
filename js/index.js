@@ -12,16 +12,24 @@ const model = (() => {
   let localState
 
   return {
-    getRemoteState: async () => {
+    getTasks: async () => {
       localState = await fetch(jsonServer).then(res => res.json())
       return localState
     },
-    getLocalState: () => localState
+    getLocalTasks: () => localState,
+    postTask: async task => {
+      await fetch(jsonServer, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      })
+    }
   }
 })()
 
 const view = (() => {
   const taskList = document.querySelector('#task-list')
+  const inputField = document.querySelector('#task-input')
 
   const createListItem = ({ title, checked = false }) => {
     const checkIcon = document.createElement('i')
@@ -55,16 +63,25 @@ const view = (() => {
       tasks
         .map(createListItem)
         .forEach(li => taskList.appendChild(li))
+    },
+    taskInput: evt => {
+      evt.preventDefault()
+      const title = inputField.value
+      inputField.value = ''
+      inputField.focus()
+      if (title !== '') controller.saveTask({ title, checked: false })
     }
   }
 })()
 
 const controller = {
   init: async () => {
-    let tasks = await model.getRemoteState()
+    const tasks = await model.getTasks()
     view.displayAll(tasks)
-  }
+  },
+  saveTask: async task => await model.postTask(task)
 }
 
+document.querySelector('#task-input-form').addEventListener('submit', view.taskInput)
 document.addEventListener('DOMContentLoaded', controller.init)
 
