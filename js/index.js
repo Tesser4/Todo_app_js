@@ -3,12 +3,8 @@ const toggleChecked = evt => {
   console.dir(evt)
 }
 
-const deleteTask = evt => {
-  console.dir(evt)
-}
-
 const model = (() => {
-  const jsonServer = 'http://localhost:3000/todos'
+  const jsonServer = 'http://localhost:3000/todos/'
   let localState
 
   return {
@@ -22,6 +18,11 @@ const model = (() => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
+      })
+    },
+    deleteTask: async id => {
+      await fetch(jsonServer + id, {
+        method: 'DELETE',
       })
     }
   }
@@ -40,7 +41,7 @@ const view = (() => {
     const delIcon = document.createElement('i')
     delIcon.classList.add('fas')
     delIcon.classList.add('fa-trash-alt')
-    delIcon.addEventListener('click', deleteTask)
+    delIcon.addEventListener('click', view.taskDeletion)
 
     const iconDiv = document.createElement('div')
     iconDiv.appendChild(checkIcon)
@@ -70,7 +71,12 @@ const view = (() => {
       inputField.value = ''
       inputField.focus()
       if (title !== '') controller.saveTask({ title, checked: false })
+    },
+    taskDeletion: evt => {
+      const title = evt.target.parentElement.parentElement.textContent.trim()
+      controller.delTaskByTitle(title)
     }
+
   }
 })()
 
@@ -79,7 +85,12 @@ const controller = {
     const tasks = await model.getTasks()
     view.displayAll(tasks)
   },
-  saveTask: async task => await model.postTask(task)
+  saveTask: async task => await model.postTask(task),
+  delTaskByTitle: async title => {
+    const tasks = model.getLocalTasks()
+    const [task] = tasks.filter(task => task.title === title)
+    await model.deleteTask(task.id)
+  }
 }
 
 document.querySelector('#task-input-form').addEventListener('submit', view.taskInput)
