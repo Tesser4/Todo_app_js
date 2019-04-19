@@ -4,24 +4,26 @@ const model = (() => {
   let localState
 
   return {
-    getTasks: async () => {
+    async getTasks() {
       localState = await fetch(jsonServer).then(res => res.json())
       return localState
     },
-    getLocalTasks: () => localState,
-    postTask: async task => {
+    getLocalTasks() {
+      return localState
+    },
+    async postTask(task) {
       await fetch(jsonServer, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
       })
     },
-    deleteTask: async id => {
+    async deleteTask(id) {
       await fetch(jsonServer + id, {
         method: 'DELETE',
       })
     },
-    updateTask: async task => {
+    async updateTask(task) {
       const { id } = task
       await fetch(jsonServer + id, {
         method: 'PUT',
@@ -63,24 +65,24 @@ const view = (() => {
   }
 
   return {
-    displayAll: tasks => {
+    displayAll(tasks) {
       taskList.innerHTML = ''
       tasks
         .map(createListItem)
         .forEach(li => taskList.appendChild(li))
     },
-    taskInput: evt => {
+    taskInput(evt) {
       evt.preventDefault()
       const title = inputField.value
       inputField.value = ''
       inputField.focus()
       if (title !== '') controller.saveTask({ title, checked: false })
     },
-    taskDeletion: evt => {
+    taskDeletion(evt) {
       const title = evt.target.parentElement.parentElement.textContent.trim()
       controller.delTaskByTitle(title)
     },
-    toggleChecked: evt => {
+    toggleChecked(evt) {
       const title = evt.target.parentElement.parentElement.textContent.trim()
       controller.changeTaskStatus(title)
     }
@@ -88,20 +90,20 @@ const view = (() => {
 })()
 
 const controller = {
-  init: async () => {
+  async init() {
     view.displayAll(await model.getTasks())
   },
-  saveTask: async task => {
+  async saveTask(task) {
     await model.postTask(task)
     view.displayAll(await model.getTasks())
   },
-  delTaskByTitle: async title => {
+  async delTaskByTitle(title) {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
     await model.deleteTask(task.id)
     view.displayAll(await model.getTasks())
   },
-  changeTaskStatus: async title => {
+  async changeTaskStatus(title) {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
     task.checked = !task.checked
