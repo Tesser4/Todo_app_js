@@ -89,20 +89,24 @@ const view = (() => {
 
 const controller = {
   init: async () => {
-    const tasks = await model.getTasks()
-    view.displayAll(tasks)
+    view.displayAll(await model.getTasks())
   },
-  saveTask: async task => await model.postTask(task),
+  saveTask: async task => {
+    await model.postTask(task)
+    view.displayAll(await model.getTasks())
+  },
   delTaskByTitle: async title => {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
     await model.deleteTask(task.id)
+    view.displayAll(await model.getTasks())
   },
   changeTaskStatus: async title => {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
     task.checked = !task.checked
     await model.updateTask(task)
+    view.displayAll(await model.getTasks())
   }
 }
 
