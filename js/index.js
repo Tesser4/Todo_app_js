@@ -106,6 +106,6 @@ const controller = {
   }
 }
 
-document.querySelector('#task-input-form').addEventListener('submit', view.taskInput)
+document.querySelector('#input-form').addEventListener('submit', view.taskInput)
 document.addEventListener('DOMContentLoaded', controller.init)
 
