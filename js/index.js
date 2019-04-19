@@ -1,8 +1,4 @@
 
-const toggleChecked = evt => {
-  console.dir(evt)
-}
-
 const model = (() => {
   const jsonServer = 'http://localhost:3000/todos/'
   let localState
@@ -24,6 +20,14 @@ const model = (() => {
       await fetch(jsonServer + id, {
         method: 'DELETE',
       })
+    },
+    updateTask: async task => {
+      const { id } = task
+      await fetch(jsonServer + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      })
     }
   }
 })()
@@ -36,7 +40,7 @@ const view = (() => {
     const checkIcon = document.createElement('i')
     checkIcon.classList.add('fas')
     checkIcon.classList.add(checked ? 'fa-check-square' : 'fa-square')
-    checkIcon.addEventListener('click', toggleChecked)
+    checkIcon.addEventListener('click', view.toggleChecked)
 
     const delIcon = document.createElement('i')
     delIcon.classList.add('fas')
@@ -75,8 +79,11 @@ const view = (() => {
     taskDeletion: evt => {
       const title = evt.target.parentElement.parentElement.textContent.trim()
       controller.delTaskByTitle(title)
+    },
+    toggleChecked: evt => {
+      const title = evt.target.parentElement.parentElement.textContent.trim()
+      controller.changeTaskStatus(title)
     }
-
   }
 })()
 
@@ -90,6 +97,12 @@ const controller = {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
     await model.deleteTask(task.id)
+  },
+  changeTaskStatus: async title => {
+    const tasks = model.getLocalTasks()
+    const [task] = tasks.filter(task => task.title === title)
+    task.checked = !task.checked
+    await model.updateTask(task)
   }
 }
 
