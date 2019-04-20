@@ -43,11 +43,15 @@ const view = (() => {
     checkIcon.classList.add('fas')
     checkIcon.classList.add(checked ? 'fa-check-square' : 'fa-square')
     checkIcon.addEventListener('click', view.toggleChecked)
+    checkIcon.addEventListener('mouseenter', () => document.body.style.cursor = 'pointer')
+    checkIcon.addEventListener('mouseleave', () => document.body.style.cursor = 'default')
 
     const delIcon = document.createElement('i')
     delIcon.classList.add('fas')
     delIcon.classList.add('fa-trash-alt')
     delIcon.addEventListener('click', view.taskDeletion)
+    delIcon.addEventListener('mouseenter', () => document.body.style.cursor = 'pointer')
+    delIcon.addEventListener('mouseleave', () => document.body.style.cursor = 'default')
 
     const iconDiv = document.createElement('div')
     iconDiv.appendChild(checkIcon)
@@ -57,8 +61,11 @@ const view = (() => {
 
     const listItem = document.createElement('li')
     listItem.classList.add('list-group-item')
+    listItem.style.fontSize = '1.4em'
     listItem.innerText = title
-    if (checked) listItem.style.textDecoration = 'line-through'
+    checked
+      ? listItem.style.textDecoration = 'line-through'
+      : listItem.classList.add('active')
     listItem.appendChild(iconDiv)
 
     return listItem
