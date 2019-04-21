@@ -41,6 +41,8 @@ const view = (() => {
   const inputField = document.querySelector('#task-input')
   const errorDiv = document.querySelector('#error-div')
   const errorMsg = document.querySelector('#error-msg')
+  const progressDiv = document.querySelector('#progress-div')
+  const progressBar = document.querySelector('#progress-bar')
 
   const createListItem = ({ title, checked = false }) => {
     const checkIcon = document.createElement('i')
@@ -75,9 +77,27 @@ const view = (() => {
     return listItem
   }
 
+  const getProgress = tasks => {
+    return tasks
+      .reduce((a, c) => {
+        if (c.checked) a[0] += 1
+        return a
+      }, [0, tasks.length])
+      .reduce((a, c) => Math.floor(a * 100 / c))
+  }
+
+  const fireProgressBar = progress => {
+    progressDiv.style.display = ''
+    progressBar.style.width = `${progress}%`
+    progressBar.setAttribute('aria-valuenow', `${progress}`)
+  }
+
   return {
     displayAll(tasks) {
       taskList.innerHTML = ''
+      tasks.length
+        ? fireProgressBar(getProgress(tasks))
+        : progressDiv.style.display = 'none'
       tasks
         .map(createListItem)
         .forEach(li => taskList.appendChild(li))
