@@ -5,27 +5,29 @@ const model = (() => {
 
   return {
     async getTasks() {
-      localState = await fetch(jsonServer).then(res => res.json())
-      return localState
+      return fetch(jsonServer)
     },
     getLocalTasks() {
       return localState
     },
+    setLocalTasks(tasks) {
+      localState = tasks
+    },
     async postTask(task) {
-      await fetch(jsonServer, {
+      return await fetch(jsonServer, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
       })
     },
     async deleteTask(id) {
-      await fetch(jsonServer + id, {
+      return await fetch(jsonServer + id, {
         method: 'DELETE',
       })
     },
     async updateTask(task) {
       const { id } = task
-      await fetch(jsonServer + id, {
+      return await fetch(jsonServer + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
@@ -37,6 +39,8 @@ const model = (() => {
 const view = (() => {
   const taskList = document.querySelector('#task-list')
   const inputField = document.querySelector('#task-input')
+  const errorDiv = document.querySelector('#error-div')
+  const errorMsg = document.querySelector('#error-msg')
 
   const createListItem = ({ title, checked = false }) => {
     const checkIcon = document.createElement('i')
@@ -92,33 +96,70 @@ const view = (() => {
     toggleChecked(evt) {
       const title = evt.target.parentElement.parentElement.textContent.trim()
       controller.changeTaskStatus(title)
+    },
+    displayError(msg) {
+      errorDiv.style.display = ''
+      errorMsg.innerText = msg
     }
   }
 })()
 
 const controller = {
   async init() {
-    view.displayAll(await model.getTasks())
+    try {
+      const response = await model.getTasks()
+      if (!response.ok) {
+        throw new Error(`Status ${response.status}: ${response.statusText}`)
+      }
+      let tasks = await response.json()
+      model.setLocalTasks(tasks)
+      view.displayAll(tasks)
+    } catch (err) {
+      view.displayError(err.message)
+    }
   },
   async saveTask(task) {
-    await model.postTask(task)
-    view.displayAll(await model.getTasks())
+    try {
+      const response = await model.postTask(task)
+      if (!response.ok) {
+        throw new Error(`Status ${response.status}: ${response.statusText}`)
+      }
+      controller.init()
+    } catch (err) {
+      view.displayError(err.message)
+    }
   },
   async delTaskByTitle(title) {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
-    await model.deleteTask(task.id)
-    view.displayAll(await model.getTasks())
+    try {
+      const response = await model.deleteTask(task.id)
+      if (!response.ok) {
+        throw new Error(`Status ${response.status}: ${response.statusText}`)
+      }
+      controller.init()
+    } catch (err) {
+      view.displayError(err.message)
+    }
   },
   async changeTaskStatus(title) {
     const tasks = model.getLocalTasks()
     const [task] = tasks.filter(task => task.title === title)
     task.checked = !task.checked
-    await model.updateTask(task)
-    view.displayAll(await model.getTasks())
+    try {
+      const response = await model.updateTask(task)
+      if (!response.ok) {
+        throw new Error(`Status ${response.status}: ${response.statusText}`)
+      }
+      controller.init()
+    } catch (err) {
+      view.displayError(err.message)
+    }
   }
 }
 
 document.querySelector('#input-form').addEventListener('submit', view.taskInput)
+document.querySelector('#close-error').addEventListener('click', () => {
+  document.querySelector('#error-div').style.display = 'none'
+})
 document.addEventListener('DOMContentLoaded', controller.init)
-
