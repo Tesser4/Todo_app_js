@@ -7,10 +7,10 @@ const model = (() => {
     async getTasks() {
       return fetch(jsonServer)
     },
-    getLocalTasks() {
+    getLocalState() {
       return localState
     },
-    setLocalTasks(tasks) {
+    setLocalState(tasks) {
       localState = tasks
     },
     async postTask(task) {
@@ -20,7 +20,7 @@ const model = (() => {
         body: JSON.stringify(task)
       })
     },
-    async deleteTask(id) {
+    async deleteTask({ id }) {
       return await fetch(jsonServer + id, {
         method: 'DELETE',
       })
@@ -68,7 +68,7 @@ const view = (() => {
     const listItem = document.createElement('li')
     listItem.classList.add('list-group-item')
     listItem.style.fontSize = '1.4em'
-    listItem.innerText = title
+    listItem.textContent = title
     checked
       ? listItem.style.textDecoration = 'line-through'
       : listItem.classList.add('active')
@@ -77,14 +77,13 @@ const view = (() => {
     return listItem
   }
 
-  const getProgress = tasks => {
-    return tasks
+  const getProgress = tasks =>
+    tasks
       .reduce((a, c) => {
         if (c.checked) a[0] += 1
         return a
       }, [0, tasks.length])
       .reduce((a, c) => Math.floor(a * 100 / c))
-  }
 
   const fireProgressBar = progress => {
     progressDiv.style.display = ''
@@ -115,11 +114,11 @@ const view = (() => {
     },
     toggleChecked(evt) {
       const title = evt.target.parentElement.parentElement.textContent.trim()
-      controller.changeTaskStatus(title)
+      controller.changeTaskByTitle(title)
     },
     displayError(msg) {
       errorDiv.style.display = ''
-      errorMsg.innerText = msg
+      errorMsg.textContent = msg
     }
   }
 })()
@@ -128,11 +127,10 @@ const controller = {
   async init() {
     try {
       const response = await model.getTasks()
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`Status ${response.status}: ${response.statusText}`)
-      }
       let tasks = await response.json()
-      model.setLocalTasks(tasks)
+      model.setLocalState(tasks)
       view.displayAll(tasks)
     } catch (err) {
       view.displayError(err.message)
@@ -141,36 +139,33 @@ const controller = {
   async saveTask(task) {
     try {
       const response = await model.postTask(task)
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`Status ${response.status}: ${response.statusText}`)
-      }
       controller.init()
     } catch (err) {
       view.displayError(err.message)
     }
   },
   async delTaskByTitle(title) {
-    const tasks = model.getLocalTasks()
+    const tasks = model.getLocalState()
     const [task] = tasks.filter(task => task.title === title)
     try {
-      const response = await model.deleteTask(task.id)
-      if (!response.ok) {
+      const response = await model.deleteTask(task)
+      if (!response.ok)
         throw new Error(`Status ${response.status}: ${response.statusText}`)
-      }
       controller.init()
     } catch (err) {
       view.displayError(err.message)
     }
   },
-  async changeTaskStatus(title) {
-    const tasks = model.getLocalTasks()
+  async changeTaskByTitle(title) {
+    const tasks = model.getLocalState()
     const [task] = tasks.filter(task => task.title === title)
     task.checked = !task.checked
     try {
       const response = await model.updateTask(task)
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`Status ${response.status}: ${response.statusText}`)
-      }
       controller.init()
     } catch (err) {
       view.displayError(err.message)
@@ -179,7 +174,7 @@ const controller = {
 }
 
 document.querySelector('#input-form').addEventListener('submit', view.taskInput)
-document.querySelector('#close-error').addEventListener('click', () => {
-  document.querySelector('#error-div').style.display = 'none'
+document.querySelector('#close-error').addEventListener('click', evt => {
+  evt.target.parentElement.style.display = 'none'
 })
 document.addEventListener('DOMContentLoaded', controller.init)
