@@ -20,7 +20,7 @@ const model = (() => {
         body: JSON.stringify(task)
       })
     },
-    async deleteTask({ id }) {
+    async deleteTask(id) {
       return await fetch(jsonServer + id, {
         method: 'DELETE',
       })
@@ -44,7 +44,7 @@ const view = (() => {
   const progressDiv = document.querySelector('#progress-div')
   const progressBar = document.querySelector('#progress-bar')
 
-  const createListItem = ({ title, checked = false }) => {
+  const createListItem = ({ id, title, checked = false }) => {
     const checkIcon = document.createElement('i')
     checkIcon.classList.add('fas')
     checkIcon.classList.add(checked ? 'fa-check-square' : 'fa-square')
@@ -68,6 +68,7 @@ const view = (() => {
     const listItem = document.createElement('li')
     listItem.classList.add('list-group-item')
     listItem.style.fontSize = '1.4em'
+    listItem.id = `${id}`
     listItem.textContent = title
     checked
       ? listItem.style.textDecoration = 'line-through'
@@ -109,12 +110,12 @@ const view = (() => {
       if (title !== '') controller.saveTask({ title, checked: false })
     },
     taskDeletion(evt) {
-      const title = evt.target.parentElement.parentElement.textContent.trim()
-      controller.delTaskByTitle(title)
+      const id = evt.target.parentElement.parentElement.id
+      controller.delTaskById(id)
     },
     toggleChecked(evt) {
-      const title = evt.target.parentElement.parentElement.textContent.trim()
-      controller.changeTaskByTitle(title)
+      const id = evt.target.parentElement.parentElement.id
+      controller.changeTaskStatusById(id)
     },
     displayError(msg) {
       errorDiv.style.display = ''
@@ -146,11 +147,9 @@ const controller = {
       view.displayError(err.message)
     }
   },
-  async delTaskByTitle(title) {
-    const tasks = model.getLocalState()
-    const [task] = tasks.filter(task => task.title === title)
+  async delTaskById(id) {
     try {
-      const response = await model.deleteTask(task)
+      const response = await model.deleteTask(id)
       if (!response.ok)
         throw new Error(`Status ${response.status}: ${response.statusText}`)
       controller.init()
@@ -158,10 +157,14 @@ const controller = {
       view.displayError(err.message)
     }
   },
-  async changeTaskByTitle(title) {
-    const tasks = model.getLocalState()
-    const [task] = tasks.filter(task => task.title === title)
-    task.checked = !task.checked
+  async changeTaskStatusById(id) {
+    const [task] = model
+      .getLocalState()
+      .filter(task => task.id === +id)
+      .map(task => {
+        task.checked = !task.checked
+        return task
+      })
     try {
       const response = await model.updateTask(task)
       if (!response.ok)
