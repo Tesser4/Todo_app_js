@@ -2,30 +2,16 @@
 const model = (() => {
   const jsonServer = 'http://localhost:3000/todos/'
 
-  return {
-    async getTasks() {
-      return fetch(jsonServer)
-    },
-    async postTask(task) {
-      return await fetch(jsonServer, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(task)
-      })
-    },
-    async deleteTask(id) {
-      return await fetch(jsonServer + id, {
-        method: 'DELETE',
-      })
-    },
-    async updateTask(task) {
-      const { id } = task
-      return await fetch(jsonServer + id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(task)
-      })
+  return ({ method, task }) => {
+    const id = method === 'get' || method === 'post'
+      ? ''
+      : task.id
+    const options = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
     }
+    return fetch(jsonServer + id, options)
   }
 })()
 
@@ -123,7 +109,7 @@ const controller = (() => {
   return {
     async init() {
       try {
-        const response = await model.getTasks()
+        const response = await model({ method: 'get' })
         if (!response.ok)
           throw new Error(`Status ${response.status}: ${response.statusText}`)
         localState = await response.json()
@@ -134,7 +120,7 @@ const controller = (() => {
     },
     async saveTask(task) {
       try {
-        const response = await model.postTask(task)
+        const response = await model({ method: 'post', task })
         if (!response.ok)
           throw new Error(`Status ${response.status}: ${response.statusText}`)
         controller.init()
@@ -143,8 +129,14 @@ const controller = (() => {
       }
     },
     async delTaskById(id) {
+      const [task] = localState
+        .filter(task => task.id === +id)
+        .map(task => {
+          task.checked = !task.checked
+          return task
+        })
       try {
-        const response = await model.deleteTask(id)
+        const response = await model({ method: 'delete', task })
         if (!response.ok)
           throw new Error(`Status ${response.status}: ${response.statusText}`)
         controller.init()
@@ -160,7 +152,7 @@ const controller = (() => {
           return task
         })
       try {
-        const response = await model.updateTask(task)
+        const response = await model({ method: 'put', task })
         if (!response.ok)
           throw new Error(`Status ${response.status}: ${response.statusText}`)
         controller.init()
