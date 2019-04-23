@@ -72,7 +72,7 @@ const view = (() => {
   }
 
   return {
-    displayAll(tasks) {
+    displayAll(tasks = []) {
       taskList.innerHTML = ''
       tasks.length
         ? fireProgressBar(getProgress(tasks))
@@ -106,59 +106,39 @@ const view = (() => {
 const controller = (() => {
   let localState
 
+  const getTaskById = id => {
+    const [task] = localState.filter(task => task.id === +id)
+    return task
+  }
+
+  const callModel = async options => {
+    try {
+      const response = await model(options)
+      if (!response.ok)
+        throw new Error(`Status ${response.status}: ${response.statusText}`)
+      if (options.method === 'get') localState = await response.json()
+      else controller.init()
+    } catch (err) {
+      view.displayError(err.message)
+    }
+  }
+
   return {
     async init() {
-      try {
-        const response = await model({ method: 'get' })
-        if (!response.ok)
-          throw new Error(`Status ${response.status}: ${response.statusText}`)
-        localState = await response.json()
-        view.displayAll(localState)
-      } catch (err) {
-        view.displayError(err.message)
-      }
+      await callModel({ method: 'get' })
+      view.displayAll(localState)
     },
     async saveTask(task) {
-      try {
-        const response = await model({ method: 'post', task })
-        if (!response.ok)
-          throw new Error(`Status ${response.status}: ${response.statusText}`)
-        controller.init()
-      } catch (err) {
-        view.displayError(err.message)
-      }
+      await callModel({ method: 'post', task })
     },
     async delTaskById(id) {
-      const [task] = localState
-        .filter(task => task.id === +id)
-        .map(task => {
-          task.checked = !task.checked
-          return task
-        })
-      try {
-        const response = await model({ method: 'delete', task })
-        if (!response.ok)
-          throw new Error(`Status ${response.status}: ${response.statusText}`)
-        controller.init()
-      } catch (err) {
-        view.displayError(err.message)
-      }
+      const task = getTaskById(id)
+      await callModel({ method: 'delete', task })
     },
     async changeTaskStatusById(id) {
-      const [task] = localState
-        .filter(task => task.id === +id)
-        .map(task => {
-          task.checked = !task.checked
-          return task
-        })
-      try {
-        const response = await model({ method: 'put', task })
-        if (!response.ok)
-          throw new Error(`Status ${response.status}: ${response.statusText}`)
-        controller.init()
-      } catch (err) {
-        view.displayError(err.message)
-      }
+      const task = getTaskById(id)
+      task.checked = !task.checked
+      await callModel({ method: 'put', task })
     }
   }
 })()
