@@ -1,17 +1,10 @@
 
 const model = (() => {
   const jsonServer = 'http://localhost:3000/todos/'
-  let localState
 
   return {
     async getTasks() {
       return fetch(jsonServer)
-    },
-    getLocalState() {
-      return localState
-    },
-    setLocalState(tasks) {
-      localState = tasks
     },
     async postTask(task) {
       return await fetch(jsonServer, {
@@ -124,57 +117,59 @@ const view = (() => {
   }
 })()
 
-const controller = {
-  async init() {
-    try {
-      const response = await model.getTasks()
-      if (!response.ok)
-        throw new Error(`Status ${response.status}: ${response.statusText}`)
-      let tasks = await response.json()
-      model.setLocalState(tasks)
-      view.displayAll(tasks)
-    } catch (err) {
-      view.displayError(err.message)
-    }
-  },
-  async saveTask(task) {
-    try {
-      const response = await model.postTask(task)
-      if (!response.ok)
-        throw new Error(`Status ${response.status}: ${response.statusText}`)
-      controller.init()
-    } catch (err) {
-      view.displayError(err.message)
-    }
-  },
-  async delTaskById(id) {
-    try {
-      const response = await model.deleteTask(id)
-      if (!response.ok)
-        throw new Error(`Status ${response.status}: ${response.statusText}`)
-      controller.init()
-    } catch (err) {
-      view.displayError(err.message)
-    }
-  },
-  async changeTaskStatusById(id) {
-    const [task] = model
-      .getLocalState()
-      .filter(task => task.id === +id)
-      .map(task => {
-        task.checked = !task.checked
-        return task
-      })
-    try {
-      const response = await model.updateTask(task)
-      if (!response.ok)
-        throw new Error(`Status ${response.status}: ${response.statusText}`)
-      controller.init()
-    } catch (err) {
-      view.displayError(err.message)
+const controller = (() => {
+  let localState
+
+  return {
+    async init() {
+      try {
+        const response = await model.getTasks()
+        if (!response.ok)
+          throw new Error(`Status ${response.status}: ${response.statusText}`)
+        localState = await response.json()
+        view.displayAll(localState)
+      } catch (err) {
+        view.displayError(err.message)
+      }
+    },
+    async saveTask(task) {
+      try {
+        const response = await model.postTask(task)
+        if (!response.ok)
+          throw new Error(`Status ${response.status}: ${response.statusText}`)
+        controller.init()
+      } catch (err) {
+        view.displayError(err.message)
+      }
+    },
+    async delTaskById(id) {
+      try {
+        const response = await model.deleteTask(id)
+        if (!response.ok)
+          throw new Error(`Status ${response.status}: ${response.statusText}`)
+        controller.init()
+      } catch (err) {
+        view.displayError(err.message)
+      }
+    },
+    async changeTaskStatusById(id) {
+      const [task] = localState
+        .filter(task => task.id === +id)
+        .map(task => {
+          task.checked = !task.checked
+          return task
+        })
+      try {
+        const response = await model.updateTask(task)
+        if (!response.ok)
+          throw new Error(`Status ${response.status}: ${response.statusText}`)
+        controller.init()
+      } catch (err) {
+        view.displayError(err.message)
+      }
     }
   }
-}
+})()
 
 document.querySelector('#input-form').addEventListener('submit', view.taskInput)
 document.querySelector('#close-error').addEventListener('click', evt => {
