@@ -23,23 +23,23 @@ const view = (() => {
   const progressDiv = document.querySelector('#progress-div')
   const progressBar = document.querySelector('#progress-bar')
 
-  const createListItem = ({ id, title, checked = false }) => {
-    const checkIcon = document.createElement('i')
-    checkIcon.classList.add('fas')
-    checkIcon.classList.add(checked ? 'fa-check-square' : 'fa-square')
-    checkIcon.addEventListener('click', view.toggleChecked)
-    checkIcon.addEventListener('mouseenter', () => document.body.style.cursor = 'pointer')
-    checkIcon.addEventListener('mouseleave', () => document.body.style.cursor = 'default')
+  const buildIcon = (className, listener) => {
+    const icon = document.createElement('i')
+    icon.classList.add('fas')
+    icon.classList.add(className)
+    icon.addEventListener('click', listener)
+    icon.addEventListener('mouseenter', () => document.body.style.cursor = 'pointer')
+    icon.addEventListener('mouseleave', () => document.body.style.cursor = 'default')
 
-    const delIcon = document.createElement('i')
-    delIcon.classList.add('fas')
-    delIcon.classList.add('fa-trash-alt')
-    delIcon.addEventListener('click', view.taskDeletion)
-    delIcon.addEventListener('mouseenter', () => document.body.style.cursor = 'pointer')
-    delIcon.addEventListener('mouseleave', () => document.body.style.cursor = 'default')
+    return icon
+  }
+
+  const createListItem = ({ id, title, checked = false }) => {
+    const chkIcon = buildIcon(`fa-${checked ? 'check-' : ''}square`, view.toggleChecked)
+    const delIcon = buildIcon('fa-trash-alt', view.taskDeletion)
 
     const iconDiv = document.createElement('div')
-    iconDiv.appendChild(checkIcon)
+    iconDiv.appendChild(chkIcon)
     iconDiv.append(' ')
     iconDiv.appendChild(delIcon)
     iconDiv.style.cssFloat = 'right'
